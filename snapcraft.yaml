@@ -1,0 +1,106 @@
+name: cinder
+version: ocata
+summary: OpenStack Block Storage Service (cinder)
+description: |
+  Cinder provides on demand, self-service access to software defined block Storage resources on top of various traditional backend block storage devices.
+confinement: strict
+grade: devel
+
+apps:
+  # If the OpenStack service has an API that runs behind uwsgi+nginx, the folowing
+  # app is required.
+  uwsgi:
+    command: snap-openstack cinder-uwsgi
+    daemon: simple
+    plugs:
+      - network-bind
+  # If the OpenStack service has an API that runs behind uwsgi+nginx, the folowing
+  # app is required.
+  nginx:
+    command: snap-openstack cinder-nginx
+    daemon: forking
+    plugs:
+      - network-bind
+  # Following is an example of creating a command app.
+  manage:
+    command: snap-openstack cinder-manage
+    plugs:
+      - network
+
+parts:
+  # Following is an example of defining a part to build an OpenStack project
+  cinder:
+    plugin: python
+    python-version: python2
+    source: http://tarballs.openstack.org/cinder/cinder-stable-ocata.tar.gz
+    python-packages:
+      # You may need to pull in additional python packages
+      - python-memcached
+      - pymysql
+      # If the OpenStack service has an API that runs behind uwsgi+nginx, uwsgi is required.
+      - uwsgi
+      - git+https://github.com/openstack/snap.openstack#egg=snap.openstack
+    constraints: https://raw.githubusercontent.com/openstack/requirements/stable/ocata/upper-constraints.txt
+    build-packages:
+      - gcc
+      - libffi-dev
+      - libssl-dev
+      - libxml2-dev
+      - libxslt1-dev
+    install: |
+      touch $SNAPCRAFT_PART_INSTALL/lib/python2.7/site-packages/paste/__init__.py
+      touch $SNAPCRAFT_PART_INSTALL/lib/python2.7/site-packages/repoze/__init__.py
+      export SNAP_ROOT="../../.."
+      export SNAP_SITE_PACKAGES="$SNAPCRAFT_PART_INSTALL/lib/python2.7/site-packages"
+      patch -d $SNAP_SITE_PACKAGES -p1 < $SNAP_ROOT/patches/oslo-config-dirs.patch
+  templates:
+    after: [cinder]
+    plugin: dump
+    source: snap
+  # Following is an example of including the OpenStack project's config
+  config:
+    after: [cinder]
+    plugin: dump
+    source: http://tarballs.openstack.org/cinder/cinder-stable-ocata.tar.gz
+    organize:
+      etc/*.conf: etc/cinder/
+      etc/*.ini: etc/cinder/
+      etc/*.json: etc/cinder/
+      etc/*.templates: etc/cinder/
+    filesets:
+      etc:
+        - etc/cinder/*.conf
+        - etc/cinder/*.ini
+        - etc/cinder/*.json
+        - etc/cinder/*.templates
+    stage: [$etc]
+    prime: [$etc]
+  # If the OpenStack service has an API that runs behind uwsgi+nginx, the following
+  # part is required.
+  nginx:
+    source: http://www.nginx.org/download/nginx-1.13.0.tar.gz
+    plugin: autotools
+    configflags:
+      - --prefix=/usr
+      - --http-log-path=/var/snap/cinder/common/log/nginx-access.log
+      - --error-log-path=/var/snap/cinder/common/log/nginx-error.log
+      - --lock-path=/var/snap/cinder/common/lock/nginx.lock
+      - --pid-path=/var/snap/cinder/common/run/nginx.pid
+      - --http-client-body-temp-path=/var/snap/cinder/common/lib/nginx_client_body
+      - --http-proxy-temp-path=/var/snap/cinder/common/lib/nginx_proxy
+      - --http-fastcgi-temp-path=/var/snap/cinder/common/lib/nginx_fastcgi
+      - --http-uwsgi-temp-path=/var/snap/cinder/common/lib/nginx_uwsgi
+      - --http-scgi-temp-path=/var/snap/cinder/common/lib/nginx_scgi
+      - --with-http_ssl_module
+    build-packages:
+      - libpcre3-dev
+      - libssl-dev
+    prepare: |
+      export SNAP_ROOT="../../.."
+      export SNAP_SOURCE="$SNAP_ROOT/parts/nginx/build"
+      patch -d $SNAP_SOURCE -p1 < $SNAP_ROOT/patches/drop-nginx-setgroups.patch
+  # If the OpenStack service has an API that runs behind uwsgi+nginx, the following
+  # part is required.
+  libxml2:
+    source: http://xmlsoft.org/sources/libxml2-2.9.4.tar.gz
+    plugin: autotools
