@@ -2,42 +2,57 @@ name: cinder
 version: ocata
 summary: OpenStack Block Storage Service (cinder)
 description: |
-  Cinder provides on demand, self-service access to software defined block Storage resources on top of various traditional backend block storage devices.
+  Cinder provides on demand, self-service access to software defined block
+  Storage resources on top of various traditional backend block storage
+  devices.
 confinement: strict
 grade: devel
 
 apps:
-  # If the OpenStack service has an API that runs behind uwsgi+nginx, the folowing
-  # app is required.
   uwsgi:
     command: snap-openstack cinder-uwsgi
     daemon: simple
     plugs:
       - network-bind
-  # If the OpenStack service has an API that runs behind uwsgi+nginx, the folowing
-  # app is required.
   nginx:
     command: snap-openstack cinder-nginx
     daemon: forking
     plugs:
       - network-bind
-  # Following is an example of creating a command app.
+  backup:
+    command: snap-openstack cinder-backup
+    daemon: simple
+    plugs:
+      - network
   manage:
     command: snap-openstack cinder-manage
     plugs:
       - network
+  scheduler:
+    command: snap-openstack cinder-scheduler
+    daemon: simple
+    plugs:
+      - network
+  volume:
+    command: snap-openstack cinder-volume
+    daemon: simple
+    plugs:
+      - network
 
 parts:
-  # Following is an example of defining a part to build an OpenStack project
+  lvm2:
+    source: http://www.sourceware.org/pub/lvm2/LVM2.2.02.172.tgz
+    plugin: autotools
+    configflags:
+      - --with-confdir=/var/snap/common/etc/
+      - --with-default-system-dir=/var/snap/common/etc/
   cinder:
     plugin: python
     python-version: python2
     source: http://tarballs.openstack.org/cinder/cinder-stable-ocata.tar.gz
     python-packages:
-      # You may need to pull in additional python packages
       - python-memcached
       - pymysql
-      # If the OpenStack service has an API that runs behind uwsgi+nginx, uwsgi is required.
       - uwsgi
       - git+https://github.com/openstack/snap.openstack#egg=snap.openstack
     constraints: https://raw.githubusercontent.com/openstack/requirements/stable/ocata/upper-constraints.txt
@@ -57,7 +72,6 @@ parts:
     after: [cinder]
     plugin: dump
     source: snap
-  # Following is an example of including the OpenStack project's config
   config:
     after: [cinder]
     plugin: dump
@@ -75,8 +89,6 @@ parts:
         - etc/cinder/*.templates
     stage: [$etc]
     prime: [$etc]
-  # If the OpenStack service has an API that runs behind uwsgi+nginx, the following
-  # part is required.
   nginx:
     source: http://www.nginx.org/download/nginx-1.13.0.tar.gz
     plugin: autotools
@@ -99,8 +111,6 @@ parts:
       export SNAP_ROOT="../../.."
       export SNAP_SOURCE="$SNAP_ROOT/parts/nginx/build"
       patch -d $SNAP_SOURCE -p1 < $SNAP_ROOT/patches/drop-nginx-setgroups.patch
-  # If the OpenStack service has an API that runs behind uwsgi+nginx, the following
-  # part is required.
   libxml2:
     source: http://xmlsoft.org/sources/libxml2-2.9.4.tar.gz
     plugin: autotools

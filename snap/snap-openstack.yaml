@@ -1,27 +1,27 @@
 setup:
   dirs:
     - "{snap_common}/etc/cinder/cinder.conf.d"
-    - "{snap_common}/lib"
-    - "{snap_common}/lock"
-    - "{snap_common}/log"
-    - "{snap_common}/run"
-    # If the OpenStack service has an API that runs behind uwsgi+nginx,
-    # define uwsgi and nginx etc dirs.
     - "{snap_common}/etc/nginx/sites-enabled"
     - "{snap_common}/etc/nginx/snap/sites-enabled"
     - "{snap_common}/etc/uwsgi/snap"
+    - "{snap_common}/lib/volumes"
+    - "{snap_common}/lock"
+    - "{snap_common}/log"
+    - "{snap_common}/run"
   templates:
-    # The cinder snap will likely require a template for the corresponding
-    # OpenStack service(s). For example, you may need to render a template such
-    # as the following.
-    cinder-snap.conf.j2: "{snap_common}/etc/cinder/cinder.conf.d/cinder-snap.conf"
-    # If the OpenStack service has an API that runs behind uwsgi+nginx,
-    # render nginx config templates.
     cinder-nginx.conf.j2: "{snap_common}/etc/nginx/snap/sites-enabled/cinder.conf"
+    cinder-snap.conf.j2: "{snap_common}/etc/cinder/cinder.conf.d/cinder-snap.conf"
     nginx.conf.j2: "{snap_common}/etc/nginx/snap/nginx.conf"
 entry_points:
-  # This is where entry_points are defined for the OpenStack service. For example,
-  # the service may have a database command-line tool such as the following.
+  cinder-backup:
+    binary: "{snap}/bin/cinder-backup"
+    config-files:
+      - "{snap}/etc/cinder/cinder.conf"
+    config-files-override:
+      - "{snap_common}/etc/cinder/cinder.conf"
+    config-dirs:
+      - "{snap_common}/etc/cinder/cinder.conf.d"
+    log-file: "{snap_common}/log/cinder-backup.log"
   cinder-manage:
     binary: "{snap}/bin/cinder-manage"
     config-files:
@@ -30,8 +30,24 @@ entry_points:
       - "{snap_common}/etc/cinder/cinder.conf"
     config-dirs:
       - "{snap_common}/etc/cinder/cinder.conf.d"
-  # If the OpenStack service has an API that runs behind uwsgi+nginx, the
-  # following entry_point must be defined.
+  cinder-scheduler:
+    binary: "{snap}/bin/cinder-scheduler"
+    config-files:
+      - "{snap}/etc/cinder/cinder.conf"
+    config-files-override:
+      - "{snap_common}/etc/cinder/cinder.conf"
+    config-dirs:
+      - "{snap_common}/etc/cinder/cinder.conf.d"
+    log-file: "{snap_common}/log/cinder-scheduler.log"
+  cinder-volume:
+    binary: "{snap}/bin/cinder-volume"
+    config-files:
+      - "{snap}/etc/cinder/cinder.conf"
+    config-files-override:
+      - "{snap_common}/etc/cinder/cinder.conf"
+    config-dirs:
+      - "{snap_common}/etc/cinder/cinder.conf.d"
+    log-file: "{snap_common}/log/cinder-volume.log"
   cinder-uwsgi:
     type: uwsgi
     uwsgi-dir: "{snap_common}/etc/uwsgi/snap"
@@ -46,8 +62,6 @@ entry_points:
     log-file: "{snap_common}/log/cinder-api.log"
     templates:
       cinder-api.ini.j2: "{snap_common}/etc/uwsgi/snap/cinder-api.ini"
-  # If the OpenStack service has an API that runs behind uwsgi+nginx, the
-  # following entry_point must be defined.
   cinder-nginx:
     type: nginx
     config-file: "{snap_common}/etc/nginx/snap/nginx.conf"

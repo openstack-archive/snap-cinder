@@ -2,7 +2,8 @@
 
 This repository contains the source code for the cinder snap.
 
-Cinder provides on demand, self-service access to software defined block Storage resources on top of various traditional backend block storage devices.
+Cinder provides on demand, self-service access to software defined block
+storage resources on top of various traditional backend block storage devices.
 
 ## Installing this snap
 
@@ -20,14 +21,16 @@ should result in an experience such as:
     sudo snap install --channel=ocata/stable cinder
     sudo snap install --channel=pike/edge cinder
 
+This snap can make use of the Linux SCSI target user-space daemon running on the
+host operating system when using the LVM backend. To do this, the tgt package
+must be installed:
+
+    sudo apt install tgt
+
 ## Configuring cinder
 
 The cinder snap gets its default configuration from the following $SNAP
 and $SNAP_COMMON locations:
-
-### Insert trees of /snap/cinder/current/etc/ and
-### /var/snap/cinder/common/etc. If the OpenStack service has an API
-### that runs behind uwsgi+nginx, the trees may like like this:
 
     /snap/cinder/current/etc/
     └── cinder
@@ -47,10 +50,8 @@ and $SNAP_COMMON locations:
         └── snap
             └── cinder-api.ini
 
-### Add any details here on how to configure services for this snap.
-### Insert a tree of /var/snap/cinder/common/etc with override files.
-### If the OpenStack service has an API that runs behind uwsgi+nginx,
-### the tree may like like this:
+The cinder applications can be configured in a few ways. The directory
+structure can be modified to override config as follows:
 
 The cinder snap supports configuration updates via its $SNAP_COMMON writable
 area. The default cinder configuration can be overridden as follows:
@@ -60,6 +61,8 @@ area. The default cinder configuration can be overridden as follows:
     │   ├── cinder.conf.d
     │   │   ├── cinder-snap.conf
     │   │   ├── database.conf
+    │   │   ├── keystone.conf
+    │   │   ├── lvm.conf
     │   │   └── rabbitmq.conf
     │   └── cinder.conf
     ├── nginx
