@@ -9,7 +9,7 @@ storage resources on top of various traditional backend block storage devices.
 
 The cinder snap can be installed directly from the snap store:
 
-    sudo snap install --edge cinder
+    sudo snap install --channel=ocata/edge cinder
 
 The cinder snap is working towards publication across tracks for
 OpenStack releases. The edge channel for each track will contain the tip
