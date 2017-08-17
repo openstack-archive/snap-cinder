@@ -24,5 +24,9 @@ class SnapstackTest(unittest.TestCase):
             ],
             snap_store=False)
 
-        plan = Plan(tests=[cinder])
+        cinder_cleanup = Step(
+            script_loc='./tests/',
+            scripts=['cinder_cleanup.sh'])
+
+        plan = Plan(tests=[cinder], test_cleanup=[cinder_cleanup])
         plan.run()
