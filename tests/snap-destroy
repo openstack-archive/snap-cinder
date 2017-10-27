@@ -1,0 +1,21 @@
+#!/bin/bash
+#
+# snap-deploy
+#
+# Utility script that installs snapstack in a virtualenv, then deploys
+# a basic version of Openstack using snaps. To use it, source the
+# admin-openrc in snapstack/scripts, and execute openstack commands as
+# you normally would.
+#
+# To uninstall, run snap-destroy.
+
+tox --notest
+
+source ../.tox/snap/bin/activate
+
+python3 -c "
+import os
+from snapstack_test import SnapstackTest
+os.chdir('..')
+SnapstackTest().destroy()
+"
